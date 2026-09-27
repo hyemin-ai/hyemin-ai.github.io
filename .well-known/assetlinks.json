@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.hyemin_ai.mantra",
+      "sha256_cert_fingerprints": [
+        "72:61:2E:5D:67:E9:8E:C1:7E:95:EF:92:97:1E:8D:5A:9B:CD:58:20:B8:CE:D6:56:91:5B:83:0E:EB:4E:7A:EB"
+      ]
+    }
+  }
+]
