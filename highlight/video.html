@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3주 하이라이트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;900&display=block" rel="stylesheet">
+<style>
+  :root { --bg:#111; --fg:#f6f1ea; --gold:#ffc978; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font-family:'Noto Sans KR',system-ui,sans-serif; }
+  body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; box-sizing:border-box; }
+  canvas { height:min(78vh, calc((100vw - 32px) * 16 / 9)); aspect-ratio:9/16; background:#000; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.6); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  button { font:inherit; font-weight:900; font-size:15px; border:0; border-radius:999px; padding:12px 20px; cursor:pointer; background:var(--gold); color:#000; }
+  button.ghost { background:#2a2724; color:var(--fg); }
+  button:disabled { opacity:.5; cursor:default; }
+  #msg { font-size:13px; color:#aaa39b; text-align:center; min-height:1.2em; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="row">
+  <button id="play" class="ghost">▶ 다시 보기</button>
+  <button id="rec">⬇ 영상 파일로 저장 (10초)</button>
+</div>
+<div id="msg">1080×1920 · 10초 · 무음 — 인스타 릴스 사이즈</div>
+<script>
+const W = 1080, H = 1920, DUR = 10;
+const TEXT = [246,241,234], SUB = [170,163,155], GOLD = [255,201,120], PINK = [255,122,168];
+// [시작, 끝, 종류, 번호, 제목, 설명]
+const SCENES = [
+  [0.0, 1.2, 'intro', '', '3주,\n앱 하나', 'Claude와 함께 만든 기록'],
+  [1.2, 2.5, 'card', '01', '기도 앱\n첫 버전', '염주 · 목탁 · 싱잉볼 · 사찰 기도'],
+  [2.5, 3.8, 'card', '02', '진짜 같은\n디자인', '3D 목탁 · 싱잉볼 · 움직이는 채'],
+  [3.8, 5.1, 'card', '03', '진짜\n목탁 소리', '직접 녹음한 소리 그대로'],
+  [5.1, 6.4, 'stat', '04', '2.9초\n→ 0.9초', '첫 화면 로딩 3배 빠르게'],
+  [6.4, 7.7, 'card', '05', '이름은\n\'만트라\' ♥', '핑크 하트 아이콘 · 인기 사찰 3곳'],
+  [7.7, 9.0, 'card', '06', '구글 플레이\n준비 완료', '앱 등록 준비물 · 공식 주소'],
+  [9.0, 10.0, 'outro', '', '만트라', 'Made with Claude'],
+];
+const c = document.getElementById('c'), g = c.getContext('2d');
+const rgba = (col, a) => `rgba(${col[0]},${col[1]},${col[2]},${Math.max(0, Math.min(1, a))})`;
+const easeOut = t => { t = Math.max(0, Math.min(1, t)); return 1 - Math.pow(1 - t, 3); };
+
+function text(str, y, size, weight, col, a, lh = 1.18) {
+  g.font = `${weight} ${size}px 'Noto Sans KR', sans-serif`;
+  g.fillStyle = rgba(col, a);
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  str.split('\n').forEach((line, i) => g.fillText(line, W / 2, y + i * size * lh));
+}
+
+function draw(t) {
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  for (const [s, e, kind, num, title, sub] of SCENES) {
+    if (t < s || t >= e) continue;
+    const aIn = easeOut((t - s) / 0.22);
+    const aOut = kind === 'outro' ? 1 : Math.min(1, (e - t) / 0.12);
+    const a = aIn * aOut, rise = (1 - aIn) * 90;
+
+    const glow = (num === '05' || kind === 'outro') ? PINK : GOLD;
+    const grad = g.createRadialGradient(W / 2, 860, 0, W / 2, 860, 560);
+    grad.addColorStop(0, rgba(glow, 0.22 * a)); grad.addColorStop(1, rgba(glow, 0));
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+
+    if (kind === 'card' || kind === 'stat') {
+      text(num, 470 + rise, 140, 900, GOLD, a);
+      text(title, 690 + rise, kind === 'stat' ? 150 : 128, 900, kind === 'stat' ? PINK : TEXT, a);
+      text(sub, 1120 + rise * 0.6, 50, 500, SUB, a);
+      const n = +num;
+      for (let j = 0; j < 6; j++) {
+        const r = j === n - 1 ? 11 : 7;
+        g.beginPath(); g.arc(W / 2 + (j - 2.5) * 44, 1330, r, 0, Math.PI * 2);
+        g.fillStyle = rgba(j < n ? GOLD : [70,66,62], a); g.fill();
+      }
+    } else if (kind === 'intro') {
+      const sc = 1 + (1 - aIn) * 0.15;
+      text(title, 640 + rise, Math.round(170 * sc), 900, TEXT, a);
+      text(sub, 1120, 54, 500, GOLD, a);
+    } else {
+      text('♥', 690 + rise, 150, 900, PINK, a);
+      text(title, 880 + rise, 190, 900, TEXT, a);
+      text(sub, 1130, 54, 500, GOLD, a);
+    }
+  }
+}
+
+let start = 0, raf = 0, recording = false;
+function loop(now) {
+  const t = (now - start) / 1000;
+  if (t >= DUR) {
+    if (recording) { draw(DUR - 0.001); return; }
+    start = now; draw(0);
+  } else draw(t);
+  raf = requestAnimationFrame(loop);
+}
+function play() { cancelAnimationFrame(raf); start = performance.now(); raf = requestAnimationFrame(loop); }
+
+const msg = document.getElementById('msg'), recBtn = document.getElementById('rec');
+document.getElementById('play').onclick = () => { if (!recording) play(); };
+
+recBtn.onclick = () => {
+  if (!window.MediaRecorder || !c.captureStream) { msg.textContent = '이 브라우저는 저장을 지원하지 않아요. 크롬에서 열거나 화면 녹화를 이용해 주세요.'; return; }
+  const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+  const type = types.find(x => MediaRecorder.isTypeSupported(x)) || '';
+  const ext = type.startsWith('video/mp4') ? 'mp4' : 'webm';
+  const rec = new MediaRecorder(c.captureStream(30), { mimeType: type, videoBitsPerSecond: 12e6 });
+  const chunks = [];
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = () => {
+    recording = false; recBtn.disabled = false;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(chunks, { type: type || 'video/webm' }));
+    a.download = `mantra-3weeks.${ext}`; a.click();
+    msg.textContent = `저장 완료: mantra-3weeks.${ext}` + (ext === 'webm' ? ' (인스타에 안 올라가면 mp4로 변환해 주세요)' : '');
+    play();
+  };
+  recording = true; recBtn.disabled = true; msg.textContent = '녹화 중… 10초만 기다려 주세요';
+  play(); rec.start();
+  setTimeout(() => rec.stop(), DUR * 1000 + 150);
+};
+
+document.fonts.load("900 100px 'Noto Sans KR'").then(() => document.fonts.load("500 50px 'Noto Sans KR'")).finally(play);
+</script>
+</body>
+</html>
